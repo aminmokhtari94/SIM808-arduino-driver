@@ -28,7 +28,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *******************************************************************************/
-#include "SIM808.h"
+#include "SIM808Driver.h"
 
 /**
  * AT commands required (const char in PROGMEM to save memory usage)
@@ -75,7 +75,7 @@ const char AT_RSP_HTTPREAD[] PROGMEM = "+HTTPREAD: "; // Expected answer HTTPREA
  * Constructor; Init the driver, communication with the module and shared
  * buffer used by the driver (to avoid multiples allocation)
  */
-SIM808::SIM808(Stream *_stream, uint8_t _pinRst, uint16_t _internalBufferSize, uint16_t _recvBufferSize, Stream *_debugStream)
+SIM808Driver::SIM808Driver(Stream *_stream, uint8_t _pinRst, uint16_t _internalBufferSize, uint16_t _recvBufferSize, Stream *_debugStream)
 {
   // Store local variables
   stream = _stream;
@@ -93,7 +93,7 @@ SIM808::SIM808(Stream *_stream, uint8_t _pinRst, uint16_t _internalBufferSize, u
   // Prepare internal buffers
   if (enableDebug)
   {
-    debugStream->print(F("SIM808 : Prepare internal buffer of "));
+    debugStream->print(F("SIM808Driver : Prepare internal buffer of "));
     debugStream->print(_internalBufferSize);
     debugStream->println(F(" bytes"));
   }
@@ -102,7 +102,7 @@ SIM808::SIM808(Stream *_stream, uint8_t _pinRst, uint16_t _internalBufferSize, u
 
   if (enableDebug)
   {
-    debugStream->print(F("SIM808 : Prepare reception buffer of "));
+    debugStream->print(F("SIM808Driver : Prepare reception buffer of "));
     debugStream->print(_recvBufferSize);
     debugStream->println(F(" bytes"));
   }
@@ -113,7 +113,7 @@ SIM808::SIM808(Stream *_stream, uint8_t _pinRst, uint16_t _internalBufferSize, u
 /**
  * Destructor; cleanup the memory allocated by the driver
  */
-SIM808::~SIM808()
+SIM808Driver::~SIM808Driver()
 {
   free(internalBuffer);
   free(recvBuffer);
@@ -122,7 +122,7 @@ SIM808::~SIM808()
 /**
  * Do HTTP/S POST to a specific URL
  */
-uint16_t SIM808::doPost(const char *url, const char *contentType, const char *payload, uint16_t clientWriteTimeoutMs, uint16_t serverReadTimeoutMs)
+uint16_t SIM808Driver::doPost(const char *url, const char *contentType, const char *payload, uint16_t clientWriteTimeoutMs, uint16_t serverReadTimeoutMs)
 {
   return doPost(url, NULL, contentType, payload, clientWriteTimeoutMs, serverReadTimeoutMs);
 }
@@ -130,7 +130,7 @@ uint16_t SIM808::doPost(const char *url, const char *contentType, const char *pa
 /**
  * Do HTTP/S POST to a specific URL with headers
  */
-uint16_t SIM808::doPost(const char *url, const char *headers, const char *contentType, const char *payload, uint16_t clientWriteTimeoutMs, uint16_t serverReadTimeoutMs)
+uint16_t SIM808Driver::doPost(const char *url, const char *headers, const char *contentType, const char *payload, uint16_t clientWriteTimeoutMs, uint16_t serverReadTimeoutMs)
 {
   // Cleanup the receive buffer
   initRecvBuffer();
@@ -148,7 +148,7 @@ uint16_t SIM808::doPost(const char *url, const char *headers, const char *conten
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : doPost() - Unable to define the content type"));
+      debugStream->println(F("SIM808Driver : doPost() - Unable to define the content type"));
     return 702;
   }
 
@@ -160,14 +160,14 @@ uint16_t SIM808::doPost(const char *url, const char *headers, const char *conten
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_DOWNLOAD))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : doPost() - Unable to send payload to module"));
+      debugStream->println(F("SIM808Driver : doPost() - Unable to send payload to module"));
     return 707;
   }
 
   // Write the payload on the module
   if (enableDebug)
   {
-    debugStream->print(F("SIM808 : doPost() - Payload to send : "));
+    debugStream->print(F("SIM808Driver : doPost() - Payload to send : "));
     debugStream->println(payload);
   }
 
@@ -181,7 +181,7 @@ uint16_t SIM808::doPost(const char *url, const char *headers, const char *conten
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : doPost() - Unable to initiate POST action"));
+      debugStream->println(F("SIM808Driver : doPost() - Unable to initiate POST action"));
     return 703;
   }
 
@@ -189,7 +189,7 @@ uint16_t SIM808::doPost(const char *url, const char *headers, const char *conten
   if (!readResponse(serverReadTimeoutMs))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : doPost() - Server timeout"));
+      debugStream->println(F("SIM808Driver : doPost() - Server timeout"));
     return 408;
   }
 
@@ -198,7 +198,7 @@ uint16_t SIM808::doPost(const char *url, const char *headers, const char *conten
   if (idxBase < 0)
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : doPost() - Invalid answer on HTTP POST"));
+      debugStream->println(F("SIM808Driver : doPost() - Invalid answer on HTTP POST"));
     return 703;
   }
 
@@ -210,7 +210,7 @@ uint16_t SIM808::doPost(const char *url, const char *headers, const char *conten
 
   if (enableDebug)
   {
-    debugStream->print(F("SIM808 : doPost() - HTTP status "));
+    debugStream->print(F("SIM808Driver : doPost() - HTTP status "));
     debugStream->println(httpRC);
   }
 
@@ -229,7 +229,7 @@ uint16_t SIM808::doPost(const char *url, const char *headers, const char *conten
 
     if (enableDebug)
     {
-      debugStream->print(F("SIM808 : doPost() - Data size received of "));
+      debugStream->print(F("SIM808Driver : doPost() - Data size received of "));
       debugStream->print(dataSize);
       debugStream->println(F(" bytes"));
     }
@@ -263,7 +263,7 @@ uint16_t SIM808::doPost(const char *url, const char *headers, const char *conten
       dataSize = recvBufferSize;
       if (enableDebug)
       {
-        debugStream->println(F("SIM808 : doPost() - Buffer overflow while loading data from HTTP. Keep only first bytes..."));
+        debugStream->println(F("SIM808Driver : doPost() - Buffer overflow while loading data from HTTP. Keep only first bytes..."));
       }
     }
 
@@ -271,13 +271,13 @@ uint16_t SIM808::doPost(const char *url, const char *headers, const char *conten
     if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
     {
       if (enableDebug)
-        debugStream->println(F("SIM808 : doPost() - Invalid end of data while reading HTTP result from the module"));
+        debugStream->println(F("SIM808Driver : doPost() - Invalid end of data while reading HTTP result from the module"));
       return 705;
     }
 
     if (enableDebug)
     {
-      debugStream->print(F("SIM808 : doPost() - Received from HTTP POST : "));
+      debugStream->print(F("SIM808Driver : doPost() - Received from HTTP POST : "));
       debugStream->println(recvBuffer);
     }
   }
@@ -295,7 +295,7 @@ uint16_t SIM808::doPost(const char *url, const char *headers, const char *conten
 /**
  * Do HTTP/S GET on a specific URL
  */
-uint16_t SIM808::doGet(const char *url, uint16_t serverReadTimeoutMs)
+uint16_t SIM808Driver::doGet(const char *url, uint16_t serverReadTimeoutMs)
 {
   return doGet(url, NULL, serverReadTimeoutMs);
 }
@@ -303,7 +303,7 @@ uint16_t SIM808::doGet(const char *url, uint16_t serverReadTimeoutMs)
 /**
  * Do HTTP/S GET on a specific URL with headers
  */
-uint16_t SIM808::doGet(const char *url, const char *headers, uint16_t serverReadTimeoutMs)
+uint16_t SIM808Driver::doGet(const char *url, const char *headers, uint16_t serverReadTimeoutMs)
 {
   // Cleanup the receive buffer
   initRecvBuffer();
@@ -321,7 +321,7 @@ uint16_t SIM808::doGet(const char *url, const char *headers, uint16_t serverRead
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : doGet() - Unable to initiate GET action"));
+      debugStream->println(F("SIM808Driver : doGet() - Unable to initiate GET action"));
     return 703;
   }
 
@@ -329,7 +329,7 @@ uint16_t SIM808::doGet(const char *url, const char *headers, uint16_t serverRead
   if (!readResponse(serverReadTimeoutMs))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : doGet() - Server timeout"));
+      debugStream->println(F("SIM808Driver : doGet() - Server timeout"));
     return 408;
   }
 
@@ -338,7 +338,7 @@ uint16_t SIM808::doGet(const char *url, const char *headers, uint16_t serverRead
   if (idxBase < 0)
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : doGet() - Invalid answer on HTTP GET"));
+      debugStream->println(F("SIM808Driver : doGet() - Invalid answer on HTTP GET"));
     return 703;
   }
 
@@ -350,7 +350,7 @@ uint16_t SIM808::doGet(const char *url, const char *headers, uint16_t serverRead
 
   if (enableDebug)
   {
-    debugStream->print(F("SIM808 : doGet() - HTTP status "));
+    debugStream->print(F("SIM808Driver : doGet() - HTTP status "));
     debugStream->println(httpRC);
   }
 
@@ -369,7 +369,7 @@ uint16_t SIM808::doGet(const char *url, const char *headers, uint16_t serverRead
 
     if (enableDebug)
     {
-      debugStream->print(F("SIM808 : doGet() - Data size received of "));
+      debugStream->print(F("SIM808Driver : doGet() - Data size received of "));
       debugStream->print(dataSize);
       debugStream->println(F(" bytes"));
     }
@@ -403,7 +403,7 @@ uint16_t SIM808::doGet(const char *url, const char *headers, uint16_t serverRead
       dataSize = recvBufferSize;
       if (enableDebug)
       {
-        debugStream->println(F("SIM808 : doGet() - Buffer overflow while loading data from HTTP. Keep only first bytes..."));
+        debugStream->println(F("SIM808Driver : doGet() - Buffer overflow while loading data from HTTP. Keep only first bytes..."));
       }
     }
 
@@ -411,13 +411,13 @@ uint16_t SIM808::doGet(const char *url, const char *headers, uint16_t serverRead
     if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
     {
       if (enableDebug)
-        debugStream->println(F("SIM808 : doGet() - Invalid end of data while reading HTTP result from the module"));
+        debugStream->println(F("SIM808Driver : doGet() - Invalid end of data while reading HTTP result from the module"));
       return 705;
     }
 
     if (enableDebug)
     {
-      debugStream->print(F("SIM808 : doGet() - Received from HTTP GET : "));
+      debugStream->print(F("SIM808Driver : doGet() - Received from HTTP GET : "));
       debugStream->println(recvBuffer);
     }
   }
@@ -435,14 +435,14 @@ uint16_t SIM808::doGet(const char *url, const char *headers, uint16_t serverRead
 /**
  * Meta method to initiate the HTTP/S session on the module
  */
-uint16_t SIM808::initiateHTTP(const char *url, const char *headers)
+uint16_t SIM808Driver::initiateHTTP(const char *url, const char *headers)
 {
   // Init HTTP connection
   sendCommand_P(AT_CMD_HTTPINIT);
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : initiateHTTP() - Unable to init HTTP"));
+      debugStream->println(F("SIM808Driver : initiateHTTP() - Unable to init HTTP"));
     return 701;
   }
 
@@ -451,7 +451,7 @@ uint16_t SIM808::initiateHTTP(const char *url, const char *headers)
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : initiateHTTP() - Unable to define bearer"));
+      debugStream->println(F("SIM808Driver : initiateHTTP() - Unable to define bearer"));
     return 702;
   }
 
@@ -460,7 +460,7 @@ uint16_t SIM808::initiateHTTP(const char *url, const char *headers)
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : initiateHTTP() - Unable to define the URL"));
+      debugStream->println(F("SIM808Driver : initiateHTTP() - Unable to define the URL"));
     return 702;
   }
 
@@ -471,7 +471,7 @@ uint16_t SIM808::initiateHTTP(const char *url, const char *headers)
     if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
     {
       if (enableDebug)
-        debugStream->println(F("SIM808 : initiateHTTP() - Unable to define Headers"));
+        debugStream->println(F("SIM808Driver : initiateHTTP() - Unable to define Headers"));
       return 702;
     }
   }
@@ -489,13 +489,13 @@ uint16_t SIM808::initiateHTTP(const char *url, const char *headers)
     {
       isSupportSSL = true;
       if (enableDebug)
-        debugStream->println(F("SIM808 : initiateHTTP() - Support of SSL enabled"));
+        debugStream->println(F("SIM808Driver : initiateHTTP() - Support of SSL enabled"));
     }
     else
     {
       isSupportSSL = false;
       if (enableDebug)
-        debugStream->println(F("SIM808 : initiateHTTP() - Support of SSL disabled (SIM808 firware below R14)"));
+        debugStream->println(F("SIM808Driver : initiateHTTP() - Support of SSL disabled (SIM808 firware below R14)"));
     }
   }
 
@@ -509,7 +509,7 @@ uint16_t SIM808::initiateHTTP(const char *url, const char *headers)
       if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
       {
         if (enableDebug)
-          debugStream->println(F("SIM808 : initiateHTTP() - Unable to switch to HTTPS"));
+          debugStream->println(F("SIM808Driver : initiateHTTP() - Unable to switch to HTTPS"));
         return 702;
       }
     }
@@ -519,7 +519,7 @@ uint16_t SIM808::initiateHTTP(const char *url, const char *headers)
       if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
       {
         if (enableDebug)
-          debugStream->println(F("SIM808 : initiateHTTP() - Unable to switch to HTTP"));
+          debugStream->println(F("SIM808Driver : initiateHTTP() - Unable to switch to HTTP"));
         return 702;
       }
     }
@@ -531,14 +531,14 @@ uint16_t SIM808::initiateHTTP(const char *url, const char *headers)
 /**
  * Meta method to terminate the HTTP/S session on the module
  */
-uint16_t SIM808::terminateHTTP()
+uint16_t SIM808Driver::terminateHTTP()
 {
   // Close HTTP connection
   sendCommand_P(AT_CMD_HTTPTERM);
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : terminateHTTP() - Unable to close HTTP session"));
+      debugStream->println(F("SIM808Driver : terminateHTTP() - Unable to close HTTP session"));
     return 706;
   }
   return 0;
@@ -547,7 +547,7 @@ uint16_t SIM808::terminateHTTP()
 /**
  * Power On GNSS on the module
 */
-bool SIM808::powerOnGNSS()
+bool SIM808Driver::powerOnGNSS()
 {
   // Send Power on GNSS cmd
   sendCommand_P(AT_CMD_CGNSPWR1);
@@ -555,7 +555,7 @@ bool SIM808::powerOnGNSS()
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : powerOnGNSS() - Unable to Power on GNSS"));
+      debugStream->println(F("SIM808Driver : powerOnGNSS() - Unable to Power on GNSS"));
     return false;
   }
   return true;
@@ -564,7 +564,7 @@ bool SIM808::powerOnGNSS()
 /**
  * Power Off GNSS on the module
 */
-bool SIM808::powerOffGNSS()
+bool SIM808Driver::powerOffGNSS()
 {
   // Send Power off GNSS cmd
   sendCommand_P(AT_CMD_CGNSPWR0);
@@ -572,7 +572,7 @@ bool SIM808::powerOffGNSS()
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : powerOnGNSS() - Unable to Power off GNSS"));
+      debugStream->println(F("SIM808Driver : powerOnGNSS() - Unable to Power off GNSS"));
     return false;
   }
   return true;
@@ -581,7 +581,7 @@ bool SIM808::powerOffGNSS()
 /**
  * Turn on navigation data URC report, and report every GNSS FIX
 */
-bool SIM808::attachGNSS(uint8_t fix)
+bool SIM808Driver::attachGNSS(uint8_t fix)
 {
   char buff[3];
   // Send Power off GNSS cmd
@@ -590,7 +590,7 @@ bool SIM808::attachGNSS(uint8_t fix)
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : attachGNSS() - Unable to attach GNSS"));
+      debugStream->println(F("SIM808Driver : attachGNSS() - Unable to attach GNSS"));
     return false;
   }
   return true;
@@ -599,7 +599,7 @@ bool SIM808::attachGNSS(uint8_t fix)
 /**
  * Turn off GNSS navigation, GEO-fences and speed alarm URC report 
 */
-bool SIM808::detachGNSS()
+bool SIM808Driver::detachGNSS()
 {
   // Send Power off GNSS cmd
   sendCommand_P(AT_CMD_CGNSURC, "0");
@@ -607,7 +607,7 @@ bool SIM808::detachGNSS()
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808 : dettachGNSS() - Unable to Power off GNSS"));
+      debugStream->println(F("SIM808Driver : dettachGNSS() - Unable to Power off GNSS"));
     return false;
   }
   return true;
@@ -616,13 +616,13 @@ bool SIM808::detachGNSS()
 /**
  * Force a reset of the module
  */
-void SIM808::reset()
+void SIM808Driver::reset()
 {
   if (pinReset != RESET_PIN_NOT_USED)
   {
     // Some logging
     if (enableDebug)
-      debugStream->println(F("SIM808 : Reset"));
+      debugStream->println(F("SIM808Driver : Reset"));
 
     // Reset the device
     digitalWrite(pinReset, HIGH);
@@ -636,9 +636,9 @@ void SIM808::reset()
   {
     // Some logging
     if (enableDebug)
-      debugStream->println(F("SIM808 : Reset requested but reset pin undefined"));
+      debugStream->println(F("SIM808Driver : Reset requested but reset pin undefined"));
     if (enableDebug)
-      debugStream->println(F("SIM808 : No reset"));
+      debugStream->println(F("SIM808Driver : No reset"));
   }
 
   // Purge the serial
@@ -652,7 +652,7 @@ void SIM808::reset()
 /**
  * Return the size of data received after the last successful HTTP connection
  */
-uint16_t SIM808::getDataSizeReceived()
+uint16_t SIM808Driver::getDataSizeReceived()
 {
   return dataSize;
 }
@@ -660,7 +660,7 @@ uint16_t SIM808::getDataSizeReceived()
 /**
  * Return the buffer of data received after the last successful HTTP connection
  */
-char *SIM808::getDataReceived()
+char *SIM808Driver::getDataReceived()
 {
   return recvBuffer;
 }
@@ -668,7 +668,7 @@ char *SIM808::getDataReceived()
 /**
  * Status function: Check if AT command works
  */
-bool SIM808::isReady()
+bool SIM808Driver::isReady()
 {
   sendCommand_P(AT_CMD_BASE);
   return readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK);
@@ -677,7 +677,7 @@ bool SIM808::isReady()
 /**
  * Status function: Check the power mode
  */
-PowerMode SIM808::getPowerMode()
+PowerMode SIM808Driver::getPowerMode()
 {
   sendCommand_P(AT_CMD_CFUN_TEST);
   if (readResponse(DEFAULT_TIMEOUT))
@@ -712,7 +712,7 @@ PowerMode SIM808::getPowerMode()
 /**
  * Status function: Get version of the module
  */
-char *SIM808::getVersion()
+char *SIM808Driver::getVersion()
 {
   sendCommand_P(AT_CMD_ATI);
   if (readResponse(DEFAULT_TIMEOUT))
@@ -738,7 +738,7 @@ char *SIM808::getVersion()
 /**
  * Status function: Get firmware version
  */
-char *SIM808::getFirmware()
+char *SIM808Driver::getFirmware()
 {
   sendCommand_P(AT_CMD_GMR);
   if (readResponse(DEFAULT_TIMEOUT))
@@ -764,7 +764,7 @@ char *SIM808::getFirmware()
 /**
  * Status function: Requests the simcard number
  */
-char *SIM808::getSimCardNumber()
+char *SIM808Driver::getSimCardNumber()
 {
   sendCommand_P(AT_CMD_SIM_CARD);
   if (readResponse(DEFAULT_TIMEOUT))
@@ -789,7 +789,7 @@ char *SIM808::getSimCardNumber()
 /**
  * Status function: Check if the module is registered on the network
  */
-NetworkRegistration SIM808::getRegistrationStatus()
+NetworkRegistration SIM808Driver::getRegistrationStatus()
 {
   sendCommand_P(AT_CMD_CREG_TEST);
   if (readResponse(DEFAULT_TIMEOUT))
@@ -830,7 +830,7 @@ NetworkRegistration SIM808::getRegistrationStatus()
  * Setup the GPRS connectivity
  * As input, give the APN string of the operator
  */
-bool SIM808::setupGPRS(const char *apn)
+bool SIM808Driver::setupGPRS(const char *apn)
 {
   // Prepare the GPRS connection as the bearer
   sendCommand_P(AT_CMD_SAPBR_GPRS);
@@ -847,7 +847,7 @@ bool SIM808::setupGPRS(const char *apn)
 /**
  * Open the GPRS connectivity
  */
-bool SIM808::connectGPRS()
+bool SIM808Driver::connectGPRS()
 {
   sendCommand_P(AT_CMD_SAPBR1);
   // Timout is max 85 seconds according to SIM808 specifications
@@ -858,7 +858,7 @@ bool SIM808::connectGPRS()
 /**
  * Close the GPRS connectivity
  */
-bool SIM808::disconnectGPRS()
+bool SIM808Driver::disconnectGPRS()
 {
   sendCommand_P(AT_CMD_SAPBR0);
   // Timout is max 65 seconds according to SIM808 specifications
@@ -870,7 +870,7 @@ bool SIM808::disconnectGPRS()
  * Available : MINIMUM, NORMAL, SLEEP
  * Return true is the mode is correctly switched
  */
-bool SIM808::setPowerMode(PowerMode powerMode)
+bool SIM808Driver::setPowerMode(PowerMode powerMode)
 {
   // Check if the power mode requested is not ERROR or UNKNOWN
   if (powerMode == POW_ERROR || powerMode == POW_UNKNOWN)
@@ -927,7 +927,7 @@ bool SIM808::setPowerMode(PowerMode powerMode)
 /**
  * Status function: Check the strengh of the signal
  */
-uint8_t SIM808::getSignal()
+uint8_t SIM808Driver::getSignal()
 {
   sendCommand_P(AT_CMD_CSQ);
   if (readResponse(DEFAULT_TIMEOUT))
@@ -959,7 +959,7 @@ uint8_t SIM808::getSignal()
  * Find string "findStr" in another string "str"
  * Returns true if found, false elsewhere
  */
-int16_t SIM808::strIndex(const char *str, const char *findStr, uint16_t startIdx)
+int16_t SIM808Driver::strIndex(const char *str, const char *findStr, uint16_t startIdx)
 {
   int16_t firstIndex = -1;
   int16_t sizeMatch = 0;
@@ -997,7 +997,7 @@ int16_t SIM808::strIndex(const char *str, const char *findStr, uint16_t startIdx
 /**
  * Init internal buffer
  */
-void SIM808::initInternalBuffer()
+void SIM808Driver::initInternalBuffer()
 {
   for (uint16_t i = 0; i < internalBufferSize; i++)
   {
@@ -1008,7 +1008,7 @@ void SIM808::initInternalBuffer()
 /**
  * Init recv buffer
  */
-void SIM808::initRecvBuffer()
+void SIM808Driver::initRecvBuffer()
 {
   // Cleanup the receive buffer
   for (uint16_t i = 0; i < recvBufferSize; i++)
@@ -1023,11 +1023,11 @@ void SIM808::initRecvBuffer()
 /**
  * Send AT command to the module
  */
-void SIM808::sendCommand(const char *command)
+void SIM808Driver::sendCommand(const char *command)
 {
   if (enableDebug)
   {
-    debugStream->print(F("SIM808 : Send \""));
+    debugStream->print(F("SIM808Driver : Send \""));
     debugStream->print(command);
     debugStream->println(F("\""));
   }
@@ -1041,7 +1041,7 @@ void SIM808::sendCommand(const char *command)
 /**
  * Send AT command coming from the PROGMEM
  */
-void SIM808::sendCommand_P(const char *command)
+void SIM808Driver::sendCommand_P(const char *command)
 {
   char cmdBuff[32];
   strcpy_P(cmdBuff, command);
@@ -1051,11 +1051,11 @@ void SIM808::sendCommand_P(const char *command)
 /**
  * Send AT command to the module with a parameter
  */
-void SIM808::sendCommand(const char *command, const char *parameter)
+void SIM808Driver::sendCommand(const char *command, const char *parameter)
 {
   if (enableDebug)
   {
-    debugStream->print(F("SIM808 : Send \""));
+    debugStream->print(F("SIM808Driver : Send \""));
     debugStream->print(command);
     debugStream->print(F("\""));
     debugStream->print(parameter);
@@ -1075,7 +1075,7 @@ void SIM808::sendCommand(const char *command, const char *parameter)
 /**
  * Send AT command coming from the PROGMEM with a parameter
  */
-void SIM808::sendCommand_P(const char *command, const char *parameter)
+void SIM808Driver::sendCommand_P(const char *command, const char *parameter)
 {
   char cmdBuff[32];
   strcpy_P(cmdBuff, command);
@@ -1085,7 +1085,7 @@ void SIM808::sendCommand_P(const char *command, const char *parameter)
 /**
  * Purge the serial data
  */
-void SIM808::purgeSerial()
+void SIM808Driver::purgeSerial()
 {
   stream->flush();
   while (stream->available())
@@ -1098,7 +1098,7 @@ void SIM808::purgeSerial()
 /**
  * Read from module and expect a specific answer (timeout in millisec)
  */
-bool SIM808::readResponseCheckAnswer_P(uint16_t timeout, const char *expectedAnswer, uint8_t crlfToWait)
+bool SIM808Driver::readResponseCheckAnswer_P(uint16_t timeout, const char *expectedAnswer, uint8_t crlfToWait)
 {
   if (readResponse(timeout, crlfToWait))
   {
@@ -1120,7 +1120,7 @@ bool SIM808::readResponseCheckAnswer_P(uint16_t timeout, const char *expectedAns
  * Read from the module for a specific number of CRLF
  * True if we have some data
  */
-bool SIM808::readResponse(uint16_t timeout, uint8_t crlfToWait)
+bool SIM808Driver::readResponse(uint16_t timeout, uint8_t crlfToWait)
 {
   uint16_t currentSizeResponse = 0;
   bool seenCR = false;
@@ -1150,7 +1150,7 @@ bool SIM808::readResponse(uint16_t timeout, uint8_t crlfToWait)
         if (countCRLF == crlfToWait)
         {
           if (enableDebug)
-            debugStream->println(F("SIM808 : End of transmission"));
+            debugStream->println(F("SIM808Driver : End of transmission"));
           break;
         }
       }
@@ -1166,7 +1166,7 @@ bool SIM808::readResponse(uint16_t timeout, uint8_t crlfToWait)
       if (currentSizeResponse == internalBufferSize)
       {
         if (enableDebug)
-          debugStream->println(F("SIM808 : Received maximum buffer size"));
+          debugStream->println(F("SIM808Driver : Received maximum buffer size"));
         break;
       }
     }
@@ -1175,7 +1175,7 @@ bool SIM808::readResponse(uint16_t timeout, uint8_t crlfToWait)
     if (millis() - timerStart > timeout)
     {
       if (enableDebug)
-        debugStream->println(F("SIM808 : Receive timeout"));
+        debugStream->println(F("SIM808Driver : Receive timeout"));
       // Timeout, return false to parent function
       return false;
     }
@@ -1183,7 +1183,7 @@ bool SIM808::readResponse(uint16_t timeout, uint8_t crlfToWait)
 
   if (enableDebug)
   {
-    debugStream->print(F("SIM808 : Receive \""));
+    debugStream->print(F("SIM808Driver : Receive \""));
     debugStream->print(internalBuffer);
     debugStream->println(F("\""));
   }

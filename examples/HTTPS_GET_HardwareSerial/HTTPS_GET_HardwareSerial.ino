@@ -26,14 +26,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *******************************************************************************/
-#include "SIM808.h"
+#include "SIM808Driver.h"
 
 #define SIM808_RST_PIN 6
 
 const char APN[] = "Internet.be";
 const char URL[] = "https://postman-echo.com/get?foo1=bar1&foo2=bar2";
 
-SIM808 *sim808;
+SIM808Driver *sim808;
 
 void setup()
 {
@@ -47,10 +47,10 @@ void setup()
   delay(1000);
 
   // Initialize SIM808 driver with an internal buffer of 200 bytes and a reception buffer of 512 bytes, debug disabled
-  sim808 = new SIM808((Stream *)&Serial1, SIM808_RST_PIN, 200, 512);
+  sim808 = new SIM808Driver((Stream *)&Serial1, SIM808_RST_PIN, 200, 512);
 
   // Equivalent line with the debug enabled on the Serial
-  // sim808 = new SIM808((Stream *)&Serial1, SIM808_RST_PIN, 200, 512, (Stream *)&Serial);
+  // sim808 = new SIM808Driver((Stream *)&Serial1, SIM808_RST_PIN, 200, 512, (Stream *)&Serial);
 
   // Setup module for GPRS communication
   setupModule();

@@ -28,13 +28,13 @@
  *******************************************************************************/
 #include <SoftwareSerial.h>
 
-#include "SIM808.h"
+#include "SIM808Driver.h"
 
 #define SIM808_RX_PIN 5
 #define SIM808_TX_PIN 4
 #define SIM808_RST_PIN 6
 
-SIM808 *sim808;
+SIM808Driver *sim808;
 
 void setup()
 {
@@ -50,10 +50,10 @@ void setup()
   delay(1000);
 
   // Initialize SIM808 driver with an internal buffer of 200 bytes and a reception buffer of 512 bytes, debug disabled
-  sim808 = new SIM808((Stream *)serial, SIM808_RST_PIN, 200, 512);
+  sim808 = new SIM808Driver((Stream *)serial, SIM808_RST_PIN, 200, 512);
 
   // Equivalent line with the debug enabled on the Serial
-  //sim808 = new SIM808((Stream *)serial, SIM808_RST_PIN, 200, 512, (Stream *)&Serial);
+  //sim808 = new SIM808Driver((Stream *)serial, SIM808_RST_PIN, 200, 512, (Stream *)&Serial);
 
   Serial.println("Start of test protocol");
 

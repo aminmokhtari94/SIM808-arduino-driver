@@ -48,13 +48,13 @@ To initiate with a SoftwareSerial link (on pin TX_PIN and RX_PIN):
 ```
 SoftwareSerial* serial = new SoftwareSerial(TX_PIN, RX_PIN);
 serial->begin(9600);
-SIM808* sim808 = new SIM808((Stream *)serial, SIM808_RST_PIN, 200, 512);
+SIM808Driver* sim808 = new SIM808Driver((Stream *)serial, SIM808_RST_PIN, 200, 512);
 ```
 
 To initiate with a hardware serial link (Serial1):
 ```
 Serial1.begin(9600);
-SIM808* sim808 = new SIM808((Stream *)&Serial1, SIM808_RST_PIN, 200, 512);
+SIM808Driver* sim808 = new SIM808Driver((Stream *)&Serial1, SIM808_RST_PIN, 200, 512);
 ```
 
 ### Setup and check all aspects for the connectivity

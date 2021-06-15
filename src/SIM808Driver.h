@@ -55,7 +55,7 @@ enum NetworkRegistration
   NET_ERROR
 };
 
-class SIM808
+class SIM808Driver
 {
 public:
   // Initialize the driver
@@ -66,8 +66,8 @@ public:
   //                        (including URL and maximum payload to send through POST method)
   //  _recvBufferSize (optional) : size in bytes of the reception buffer (max data to receive from GET or POST)
   //  _debugStream (optional) : Stream opened to the debug console (Software of Hardware)
-  SIM808(Stream *_stream, uint8_t _pinRst = RESET_PIN_NOT_USED, uint16_t _internalBufferSize = 128, uint16_t _recvBufferSize = 256, Stream *_debugStream = NULL);
-  ~SIM808();
+  SIM808Driver(Stream *_stream, uint8_t _pinRst = RESET_PIN_NOT_USED, uint16_t _internalBufferSize = 128, uint16_t _recvBufferSize = 256, Stream *_debugStream = NULL);
+  ~SIM808Driver();
 
   // Force a reset of the module
   void reset();
@@ -129,11 +129,11 @@ protected:
   uint16_t terminateHTTP();
 
   // Initiate GNSS functionality
-  bool SIM808::powerOnGNSS();
-  bool SIM808::powerOffGNSS();
+  bool powerOnGNSS();
+  bool powerOffGNSS();
 
-  bool SIM808::attachGNSS(uint8_t fix);
-  bool SIM808::detachGNSS();
+  bool attachGNSS(uint8_t fix);
+  bool detachGNSS();
 
 private:
   // Serial line with SIM808
