@@ -125,19 +125,19 @@ void loop()
   }
 
   // Go into low power mode
-  // bool lowPowerMode = sim808->setPowerMode(MINIMUM);
-  // if (lowPowerMode)
-  // {
-  //   Serial.println(F("Module in low power mode"));
-  // }
-  // else
-  // {
-  //   Serial.println(F("Failed to switch module to low power mode"));
-  // }
+  bool lowPowerMode = sim808->setPowerMode(MINIMUM);
+  if (lowPowerMode)
+  {
+    Serial.println(F("Module in low power mode"));
+  }
+  else
+  {
+    Serial.println(F("Failed to switch module to low power mode"));
+  }
 
   // End of program... wait...
-  // while (1)
-  //   ;
+  while (1)
+    ;
   delay(10000);
 }
 
