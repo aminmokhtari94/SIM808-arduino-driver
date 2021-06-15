@@ -1,0 +1,13 @@
+# Syntax Coloring Map For SIM808-arduino-driver
+
+# Datatypes (KEYWORD1)
+SIM808		KEYWORD3
+SIM868		KEYWORD3
+
+# Methods and Functions (KEYWORD2)
+doGet		KEYWORD2
+doPost		KEYWORD2
+
+# Instances (KEYWORD2)
+
+# Constants (LITERAL1)
