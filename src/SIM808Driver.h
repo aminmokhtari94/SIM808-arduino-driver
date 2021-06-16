@@ -50,6 +50,7 @@ public:
   SIM808Driver(Stream *_stream, uint8_t _pinRst = RESET_PIN_NOT_USED, uint16_t _internalBufferSize = 256, uint16_t _recvBufferSize = 512, Stream *_debugStream = NULL);
   ~SIM808Driver();
 
+  // Enums & Structures
   enum PowerMode
   {
     POW_MINIMUM,
@@ -58,6 +59,7 @@ public:
     POW_SLEEP,
     POW_ERROR
   };
+
   enum NetworkRegistration
   {
     NET_NOT_REGISTERED,
@@ -68,10 +70,16 @@ public:
     NET_REGISTERED_ROAMING,
     NET_ERROR
   };
+
   enum GnssStatus
   {
-    GNSS_NORMAL
+    GNSS_POWER_OFF,
+    GNSS_POWER_ON,
+    GNSS_FIX,
+    GNSS_NOT_FIX,
+    GNSS_ERROR
   };
+
   struct GnssInfo
   {
     uint8_t fix;
@@ -117,11 +125,11 @@ public:
   bool powerOnGNSS();
   bool powerOffGNSS();
 
-  bool getGnssPowerStatus();
+  GnssStatus getGnssPowerStatus();
 
   bool attachGNSS(uint8_t fix);
   bool detachGNSS();
-  bool getGnssInfo();
+  GnssStatus getGnssInfo();
 
 protected:
   // Send command

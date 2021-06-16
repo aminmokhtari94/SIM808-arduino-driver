@@ -123,6 +123,9 @@ SIM808Driver::~SIM808Driver()
   free(recvBuffer);
 }
 
+/*****************************************************************************************
+ * HTTP/S FUNCTIONS
+ *****************************************************************************************/
 /**
  * Do HTTP/S POST to a specific URL
  */
@@ -549,6 +552,25 @@ uint16_t SIM808Driver::terminateHTTP()
 }
 
 /**
+ * Return the size of data received after the last successful HTTP connection
+ */
+uint16_t SIM808Driver::getDataSizeReceived()
+{
+  return dataSize;
+}
+
+/**
+ * Return the buffer of data received after the last successful HTTP connection
+ */
+char *SIM808Driver::getDataReceived()
+{
+  return recvBuffer;
+}
+
+/*****************************************************************************************
+ * GNSS FUNCTIONS
+ *****************************************************************************************/
+/**
  * Power On GNSS on the module
 */
 bool SIM808Driver::powerOnGNSS()
@@ -585,7 +607,7 @@ bool SIM808Driver::powerOffGNSS()
 /**
  *  Get power status of GNSS
 */
-bool SIM808Driver::getGnssPowerStatus()
+SIM808Driver::GnssStatus SIM808Driver::getGnssPowerStatus()
 {
   sendCommand_P(AT_CMD_CGNSPWR_TEST);
   if (readResponse(DEFAULT_TIMEOUT))
@@ -596,16 +618,19 @@ bool SIM808Driver::getGnssPowerStatus()
     {
       if (enableDebug)
         debugStream->println(F("SIM808Driver : getGnssPowerStatus() - Error on getting GNSS Power"));
-      return false;
+      return GNSS_ERROR;
     }
 
     // Extract the value
     int16_t idx = strIndex(internalBuffer, "+CGNSPWR: ");
     char value = internalBuffer[idx + 10];
 
-    return value == '1';
+    if (value == '1')
+      return GNSS_POWER_ON;
+    else
+      return GNSS_POWER_OFF;
   }
-  return false
+  return GNSS_ERROR;
 }
 
 /**
@@ -645,7 +670,7 @@ bool SIM808Driver::detachGNSS()
   if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
   {
     if (enableDebug)
-      debugStream->println(F("SIM808Driver : dettachGNSS() - Unable to Power off GNSS"));
+      debugStream->println(F("SIM808Driver : detachGNSS() - Unable to Power off GNSS"));
     return false;
   }
   return true;
@@ -654,20 +679,23 @@ bool SIM808Driver::detachGNSS()
 /**
  * Turn off GNSS navigation, GEO-fences and speed alarm URC report 
 */
-bool SIM808Driver::getGnssInfo()
+SIM808Driver::GnssStatus SIM808Driver::getGnssInfo()
 {
   // Check if GNSS is On
   if (!getGnssPowerStatus())
   {
     if (enableDebug)
       debugStream->println(F("SIM808Driver : getGnssInfo() - Unable to get GNSS Info, GNSS Power in off"));
-    return;
+    return GNSS_POWER_OFF;
   }
 
   // get Info
   sendCommand_P(AT_CMD_CGNSINF);
 }
 
+/*****************************************************************************************
+ * BASE CONTROLL & CHECK FUNCTIONS
+ *****************************************************************************************/
 /**
  * Force a reset of the module
  */
@@ -707,22 +735,6 @@ void SIM808Driver::reset()
   {
     stream->read();
   }
-}
-
-/**
- * Return the size of data received after the last successful HTTP connection
- */
-uint16_t SIM808Driver::getDataSizeReceived()
-{
-  return dataSize;
-}
-
-/**
- * Return the buffer of data received after the last successful HTTP connection
- */
-char *SIM808Driver::getDataReceived()
-{
-  return recvBuffer;
 }
 
 /**
