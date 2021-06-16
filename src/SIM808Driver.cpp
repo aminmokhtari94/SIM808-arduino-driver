@@ -63,9 +63,13 @@ const char AT_CMD_HTTPACTION1[] PROGMEM = "AT+HTTPACTION=1";                 // 
 const char AT_CMD_HTTPREAD[] PROGMEM = "AT+HTTPREAD";                        // Start reading HTTP return data
 const char AT_CMD_HTTPTERM[] PROGMEM = "AT+HTTPTERM";                        // Terminate HTTP connection
 
-const char AT_CMD_CGNSPWR1[] PROGMEM = "AT+CGNSPWR=1"; // Power On GNSS
-const char AT_CMD_CGNSPWR0[] PROGMEM = "AT+CGNSPWR=0"; // Power Off GNSS
-const char AT_CMD_CGNSURC[] PROGMEM = "AT+CGNSURC=";   // GNSS navigation, GEO-fences and speed alarm URC report
+const char AT_CMD_CGNSPWR1[] PROGMEM = "AT+CGNSPWR=1";    // Power On GNSS
+const char AT_CMD_CGNSPWR0[] PROGMEM = "AT+CGNSPWR=0";    // Power Off GNSS
+const char AT_CMD_CGNSPWR_TEST[] PROGMEM = "AT+CGNSPWR?"; // Get power status of GNSS
+const char AT_CMD_CGNSURC[] PROGMEM = "AT+CGNSURC=";      // GNSS navigation, GEO-fences and speed alarm URC report
+const char AT_CMD_CGNSINF[] PROGMEM = "AT+CGNSINF";       // Get GNSS navigation information parsed from NMEA sentences
+const char AT_RSP_CGNSINF[] PROGMEM = "+CGNSINF: ";       // Expected answer CGNSINF
+const char AT_RSP_UGNSINF[] PROGMEM = "+UGNSINF: ";       // Expected answer CGNSURC
 
 const char AT_RSP_OK[] PROGMEM = "OK";                // Expected answer OK
 const char AT_RSP_DOWNLOAD[] PROGMEM = "DOWNLOAD";    // Expected answer DOWNLOAD
@@ -214,7 +218,7 @@ uint16_t SIM808Driver::doPost(const char *url, const char *headers, const char *
     debugStream->println(httpRC);
   }
 
-  if (httpRC >= 200 || httpRC <= 205)
+  if (httpRC >= 200 && httpRC <= 205)
   {
     // Get the size of the data to receive
     dataSize = 0;
@@ -579,10 +583,44 @@ bool SIM808Driver::powerOffGNSS()
 }
 
 /**
+ *  Get power status of GNSS
+*/
+bool SIM808Driver::getGnssPowerStatus()
+{
+  sendCommand_P(AT_CMD_CGNSPWR_TEST);
+  if (readResponse(DEFAULT_TIMEOUT))
+  {
+    // Check if there is an error
+    int16_t errIdx = strIndex(internalBuffer, "ERROR");
+    if (errIdx > 0)
+    {
+      if (enableDebug)
+        debugStream->println(F("SIM808Driver : getGnssPowerStatus() - Error on getting GNSS Power"));
+      return false;
+    }
+
+    // Extract the value
+    int16_t idx = strIndex(internalBuffer, "+CGNSPWR: ");
+    char value = internalBuffer[idx + 10];
+
+    return value == '1';
+  }
+  return false
+}
+
+/**
  * Turn on navigation data URC report, and report every GNSS FIX
 */
 bool SIM808Driver::attachGNSS(uint8_t fix)
 {
+  // Check if GNSS is On
+  if (!getGnssPowerStatus())
+  {
+    if (enableDebug)
+      debugStream->println(F("SIM808Driver : attachGNSS() - GNSS Power in off"));
+    return false;
+  }
+
   char buff[3];
   // Send Power off GNSS cmd
   sendCommand_P(AT_CMD_CGNSURC, itoa(fix, buff, 10));
@@ -614,6 +652,23 @@ bool SIM808Driver::detachGNSS()
 }
 
 /**
+ * Turn off GNSS navigation, GEO-fences and speed alarm URC report 
+*/
+bool SIM808Driver::getGnssInfo()
+{
+  // Check if GNSS is On
+  if (!getGnssPowerStatus())
+  {
+    if (enableDebug)
+      debugStream->println(F("SIM808Driver : getGnssInfo() - Unable to get GNSS Info, GNSS Power in off"));
+    return;
+  }
+
+  // get Info
+  sendCommand_P(AT_CMD_CGNSINF);
+}
+
+/**
  * Force a reset of the module
  */
 void SIM808Driver::reset()
@@ -637,8 +692,13 @@ void SIM808Driver::reset()
     // Some logging
     if (enableDebug)
       debugStream->println(F("SIM808Driver : Reset requested but reset pin undefined"));
-    if (enableDebug)
-      debugStream->println(F("SIM808Driver : No reset"));
+
+    // Set power to minimum and back it to normal for soft ressetting
+    if (setPowerMode(POW_MINIMUM))
+    {
+      delay(1000);
+      setPowerMode(POW_NORMAL);
+    }
   }
 
   // Purge the serial
@@ -677,7 +737,7 @@ bool SIM808Driver::isReady()
 /**
  * Status function: Check the power mode
  */
-PowerMode SIM808Driver::getPowerMode()
+SIM808Driver::PowerMode SIM808Driver::getPowerMode()
 {
   sendCommand_P(AT_CMD_CFUN_TEST);
   if (readResponse(DEFAULT_TIMEOUT))
@@ -697,11 +757,11 @@ PowerMode SIM808Driver::getPowerMode()
     switch (value)
     {
     case '0':
-      return MINIMUM;
+      return POW_MINIMUM;
     case '1':
-      return NORMAL;
+      return POW_NORMAL;
     case '4':
-      return SLEEP;
+      return POW_SLEEP;
     default:
       return POW_UNKNOWN;
     }
@@ -789,7 +849,7 @@ char *SIM808Driver::getSimCardNumber()
 /**
  * Status function: Check if the module is registered on the network
  */
-NetworkRegistration SIM808Driver::getRegistrationStatus()
+SIM808Driver::NetworkRegistration SIM808Driver::getRegistrationStatus()
 {
   sendCommand_P(AT_CMD_CREG_TEST);
   if (readResponse(DEFAULT_TIMEOUT))
@@ -809,15 +869,15 @@ NetworkRegistration SIM808Driver::getRegistrationStatus()
     switch (value)
     {
     case '0':
-      return NOT_REGISTERED;
+      return NET_NOT_REGISTERED;
     case '1':
-      return REGISTERED_HOME;
+      return NET_REGISTERED_HOME;
     case '2':
-      return SEARCHING;
+      return NET_SEARCHING;
     case '3':
-      return DENIED;
+      return NET_DENIED;
     case '5':
-      return REGISTERED_ROAMING;
+      return NET_REGISTERED_ROAMING;
     default:
       return NET_UNKNOWN;
     }
@@ -867,7 +927,7 @@ bool SIM808Driver::disconnectGPRS()
 
 /**
  * Define the power mode
- * Available : MINIMUM, NORMAL, SLEEP
+ * Available : POW_MINIMUM, POW_NORMAL, POW_SLEEP
  * Return true is the mode is correctly switched
  */
 bool SIM808Driver::setPowerMode(PowerMode powerMode)
@@ -893,8 +953,8 @@ bool SIM808Driver::setPowerMode(PowerMode powerMode)
     return true;
   }
 
-  // If SLEEP or MINIMUM, only NORMAL is allowed
-  if ((currentPowerMode == SLEEP || currentPowerMode == MINIMUM) && (powerMode != NORMAL))
+  // If POW_SLEEP or POW_MINIMUM, only POW_NORMAL is allowed
+  if ((currentPowerMode == POW_SLEEP || currentPowerMode == POW_MINIMUM) && (powerMode != POW_NORMAL))
   {
     return false;
   }
@@ -903,13 +963,13 @@ bool SIM808Driver::setPowerMode(PowerMode powerMode)
   char value;
   switch (powerMode)
   {
-  case MINIMUM:
+  case POW_MINIMUM:
     sendCommand_P(AT_CMD_CFUN0);
     break;
-  case SLEEP:
+  case POW_SLEEP:
     sendCommand_P(AT_CMD_CFUN4);
     break;
-  case NORMAL:
+  case POW_NORMAL:
   default:
     sendCommand_P(AT_CMD_CFUN1);
   }

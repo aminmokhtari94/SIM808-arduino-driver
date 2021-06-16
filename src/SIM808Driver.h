@@ -36,25 +36,6 @@
 #define DEFAULT_TIMEOUT 5000
 #define RESET_PIN_NOT_USED -1
 
-enum PowerMode
-{
-  MINIMUM,
-  NORMAL,
-  POW_UNKNOWN,
-  SLEEP,
-  POW_ERROR
-};
-enum NetworkRegistration
-{
-  NOT_REGISTERED,
-  REGISTERED_HOME,
-  SEARCHING,
-  DENIED,
-  NET_UNKNOWN,
-  REGISTERED_ROAMING,
-  NET_ERROR
-};
-
 class SIM808Driver
 {
 public:
@@ -66,8 +47,41 @@ public:
   //                        (including URL and maximum payload to send through POST method)
   //  _recvBufferSize (optional) : size in bytes of the reception buffer (max data to receive from GET or POST)
   //  _debugStream (optional) : Stream opened to the debug console (Software of Hardware)
-  SIM808Driver(Stream *_stream, uint8_t _pinRst = RESET_PIN_NOT_USED, uint16_t _internalBufferSize = 128, uint16_t _recvBufferSize = 256, Stream *_debugStream = NULL);
+  SIM808Driver(Stream *_stream, uint8_t _pinRst = RESET_PIN_NOT_USED, uint16_t _internalBufferSize = 256, uint16_t _recvBufferSize = 512, Stream *_debugStream = NULL);
   ~SIM808Driver();
+
+  enum PowerMode
+  {
+    POW_MINIMUM,
+    POW_NORMAL,
+    POW_UNKNOWN,
+    POW_SLEEP,
+    POW_ERROR
+  };
+  enum NetworkRegistration
+  {
+    NET_NOT_REGISTERED,
+    NET_REGISTERED_HOME,
+    NET_SEARCHING,
+    NET_DENIED,
+    NET_UNKNOWN,
+    NET_REGISTERED_ROAMING,
+    NET_ERROR
+  };
+  enum GnssStatus
+  {
+    GNSS_NORMAL
+  };
+  struct GnssInfo
+  {
+    uint8_t fix;
+    char utc[18];
+    char lat[10];
+    char lon[11];
+    char altitude[8];
+    char speed[6];
+    char heading[6];
+  };
 
   // Force a reset of the module
   void reset();
@@ -99,6 +113,16 @@ public:
   uint16_t getDataSizeReceived();
   char *getDataReceived();
 
+  // Initiate GNSS functionality
+  bool powerOnGNSS();
+  bool powerOffGNSS();
+
+  bool getGnssPowerStatus();
+
+  bool attachGNSS(uint8_t fix);
+  bool detachGNSS();
+  bool getGnssInfo();
+
 protected:
   // Send command
   void sendCommand(const char *command);
@@ -128,12 +152,8 @@ protected:
   uint16_t initiateHTTP(const char *url, const char *headers);
   uint16_t terminateHTTP();
 
-  // Initiate GNSS functionality
-  bool powerOnGNSS();
-  bool powerOffGNSS();
-
-  bool attachGNSS(uint8_t fix);
-  bool detachGNSS();
+  // Parse CGNSINF & UGNSINF data
+  GnssInfo parseGnssData();
 
 private:
   // Serial line with SIM808
@@ -157,6 +177,9 @@ private:
 
   // Enable debug mode
   bool enableDebug = false;
+
+  // GNSS info that received from CGNSURC & CGNSINF
+  GnssInfo gnssInfo;
 };
 
 #endif // _SIM808_H_

@@ -91,8 +91,8 @@ void setup()
   delay(1000);
 
   // Wait for operator network registration (national or roaming network)
-  NetworkRegistration network = sim808->getRegistrationStatus();
-  while (network != REGISTERED_HOME && network != REGISTERED_ROAMING)
+  SIM808Driver::NetworkRegistration network = sim808->getRegistrationStatus();
+  while (network != SIM808Driver::NET_REGISTERED_HOME && network != SIM808Driver::NET_REGISTERED_ROAMING)
   {
     delay(1000);
     network = sim808->getRegistrationStatus();

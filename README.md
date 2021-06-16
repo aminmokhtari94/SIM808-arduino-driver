@@ -69,7 +69,7 @@ The GSM signal should be up. You can test the signed strenght and wait for a sig
 sim808->getSignal();
 ```
 
-The module has to be registered on the network. You can obtain the registration status through a specific command and wait for a REGISTERED_HOME or REGISTERED_ROAMING depending on your operator and location.
+The module has to be registered on the network. You can obtain the registration status through a specific command and wait for a NET_REGISTERED_HOME or NET_REGISTERED_ROAMING depending on your operator and location.
 ```
 sim808->getRegistrationStatus();
 ```
