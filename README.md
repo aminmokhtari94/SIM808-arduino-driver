@@ -1,4 +1,4 @@
-# Arduino SIM808 HTTP connector
+# Arduino SIM808 GNSS with HTTP connector (WIP)
 Arduino driver for GSM/GPRS+GNSS modules SIMCom SIM808/SIM868 to make HTTP/S connections with GET and POST methods and use GPS/GNSS functions
 
 [![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/aminmokhtari94/SIM808-arduino-driver/blob/master/LICENSE)
