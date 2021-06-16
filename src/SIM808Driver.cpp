@@ -630,6 +630,8 @@ SIM808Driver::GnssStatus SIM808Driver::getGnssPowerStatus()
     else
       return GNSS_POWER_OFF;
   }
+  if (enableDebug)
+    debugStream->println(F("SIM808Driver : getGnssPowerStatus() - Unable to get power status of GNSS"));
   return GNSS_ERROR;
 }
 
@@ -681,16 +683,29 @@ bool SIM808Driver::detachGNSS()
 */
 SIM808Driver::GnssStatus SIM808Driver::getGnssInfo()
 {
-  // Check if GNSS is On
-  if (!getGnssPowerStatus())
-  {
-    if (enableDebug)
-      debugStream->println(F("SIM808Driver : getGnssInfo() - Unable to get GNSS Info, GNSS Power in off"));
-    return GNSS_POWER_OFF;
-  }
-
   // get Info
   sendCommand_P(AT_CMD_CGNSINF);
+
+  if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
+  {
+    if (enableDebug)
+      debugStream->println(F("SIM808Driver : getGnssInfo() - Unable to get GNSS Info"));
+    return GNSS_ERROR;
+  }
+
+  // Extract the value
+  int16_t idx = strIndex(internalBuffer, "+CGNSINF: ");
+  char value = internalBuffer[idx + 10];
+
+  if (value == '1')
+    return parseGnssData();
+  else if (enableDebug)
+    debugStream->println(F("SIM808Driver : getGnssInfo() - Unable to get GNSS Info, GNSS Power in off"));
+  return GNSS_POWER_OFF;
+}
+
+SIM808Driver::GnssStatus SIM808Driver::parseGnssData()
+{
 }
 
 /*****************************************************************************************

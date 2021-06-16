@@ -161,7 +161,7 @@ protected:
   uint16_t terminateHTTP();
 
   // Parse CGNSINF & UGNSINF data
-  GnssInfo parseGnssData();
+  GnssStatus parseGnssData();
 
 private:
   // Serial line with SIM808
