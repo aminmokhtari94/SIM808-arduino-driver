@@ -82,13 +82,20 @@ public:
 
   struct GnssInfo
   {
-    uint8_t fix;
     char utc[18];
-    char lat[10];
-    char lon[11];
-    char altitude[8];
-    char speed[6];
-    char heading[6];
+    char latitude[10];
+    char longitude[11];
+    double altitude;
+    double speed;
+    double heading;
+    uint8_t fixMode;
+    double HDOP;
+    double PDOP;
+    double VDOP;
+    double gpsSatInView;
+    double gnssSatUsed;
+    double glonassSatInView;
+    uint8_t cN0Max;
   };
 
   // Force a reset of the module
@@ -129,7 +136,7 @@ public:
 
   bool attachGNSS(uint8_t fix);
   bool detachGNSS();
-  GnssStatus getGnssInfo();
+  GnssStatus getGnssInfo(GnssInfo *gnssInfo);
 
 protected:
   // Send command
@@ -161,7 +168,7 @@ protected:
   uint16_t terminateHTTP();
 
   // Parse CGNSINF & UGNSINF data
-  GnssStatus parseGnssData();
+  GnssStatus parseGnssData(GnssInfo *gnssInfo);
 
 private:
   // Serial line with SIM808
@@ -185,9 +192,6 @@ private:
 
   // Enable debug mode
   bool enableDebug = false;
-
-  // GNSS info that received from CGNSURC & CGNSINF
-  GnssInfo gnssInfo;
 };
 
 #endif // _SIM808_H_

@@ -126,6 +126,7 @@ SIM808Driver::~SIM808Driver()
 /*****************************************************************************************
  * HTTP/S FUNCTIONS
  *****************************************************************************************/
+
 /**
  * Do HTTP/S POST to a specific URL
  */
@@ -570,6 +571,7 @@ char *SIM808Driver::getDataReceived()
 /*****************************************************************************************
  * GNSS FUNCTIONS
  *****************************************************************************************/
+
 /**
  * Power On GNSS on the module
 */
@@ -644,7 +646,7 @@ bool SIM808Driver::attachGNSS(uint8_t fix)
   if (!getGnssPowerStatus())
   {
     if (enableDebug)
-      debugStream->println(F("SIM808Driver : attachGNSS() - GNSS Power in off"));
+      debugStream->println(F("SIM808Driver : attachGNSS() - GNSS Power is off"));
     return false;
   }
 
@@ -681,36 +683,111 @@ bool SIM808Driver::detachGNSS()
 /**
  * Turn off GNSS navigation, GEO-fences and speed alarm URC report 
 */
-SIM808Driver::GnssStatus SIM808Driver::getGnssInfo()
+SIM808Driver::GnssStatus SIM808Driver::getGnssInfo(SIM808Driver::GnssInfo *gnssInfo)
 {
   // get Info
   sendCommand_P(AT_CMD_CGNSINF);
 
-  if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_OK))
+  if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_CGNSINF))
   {
     if (enableDebug)
       debugStream->println(F("SIM808Driver : getGnssInfo() - Unable to get GNSS Info"));
     return GNSS_ERROR;
   }
 
-  // Extract the value
-  int16_t idx = strIndex(internalBuffer, "+CGNSINF: ");
-  char value = internalBuffer[idx + 10];
-
-  if (value == '1')
-    return parseGnssData();
-  else if (enableDebug)
-    debugStream->println(F("SIM808Driver : getGnssInfo() - Unable to get GNSS Info, GNSS Power in off"));
-  return GNSS_POWER_OFF;
+  return parseGnssData(gnssInfo);
 }
 
-SIM808Driver::GnssStatus SIM808Driver::parseGnssData()
+SIM808Driver::GnssStatus SIM808Driver::parseGnssData(SIM808Driver::GnssInfo *gnssInfo)
 {
+  // Check if get called after AT+CGNSINF
+  int16_t idx = strIndex(internalBuffer, "+CGNSINF: ");
+  // Otherwise check if get called on AT+CGNSURC UAC report
+  if (idx == -1)
+    idx = strIndex(internalBuffer, "+UGNSINF: ");
+  if (idx == -1)
+    return GNSS_ERROR;
+
+  // Extract power status of GNSS
+  char power = internalBuffer[idx + 10];
+  // Extract fix status
+  char fix = internalBuffer[idx + 12];
+
+  if (enableDebug)
+  {
+    debugStream->println(F("SIM808Driver : parseGnssData() - power:"));
+    debugStream->println(power);
+    debugStream->println(F("SIM808Driver : parseGnssData() - fix:"));
+    debugStream->println(fix);
+  }
+  if (power == '1')
+    if (fix == '1')
+    {
+      char *tok;
+      uint16_t i = 0;
+      float info[15];
+
+      // Skip first of buffer
+      internalBuffer = &internalBuffer[idx + 14];
+
+      // Split parameters by ',' and save in info[]
+      while ((tok = strtok_r(internalBuffer, ",", &internalBuffer)) != NULL)
+      {
+        switch (i)
+        {
+        case 0:
+          memset(gnssInfo->utc, 0, sizeof(gnssInfo->utc));
+          sprintf(gnssInfo->utc, "%s", tok);
+          break;
+        case 1:
+          memset(gnssInfo->latitude, 0, sizeof(gnssInfo->utc));
+          sprintf(gnssInfo->latitude, "%s", tok);
+          break;
+        case 2:
+          memset(gnssInfo->longitude, 0, sizeof(gnssInfo->utc));
+          sprintf(gnssInfo->longitude, "%s", tok);
+          break;
+        case 6:
+          gnssInfo->fixMode = atoi(tok);
+          break;
+        case 13:
+          gnssInfo->cN0Max = atoi(tok);
+          break;
+
+        default:
+          info[i] = atof(tok);
+          break;
+        }
+
+        i++;
+      }
+
+      gnssInfo->altitude = info[3];
+      gnssInfo->speed = info[4];
+      gnssInfo->heading = info[5];
+      gnssInfo->HDOP = info[7];
+      gnssInfo->PDOP = info[8];
+      gnssInfo->VDOP = info[9];
+      gnssInfo->gpsSatInView = info[10];
+      gnssInfo->gnssSatUsed = info[11];
+      gnssInfo->glonassSatInView = info[12];
+
+      return GNSS_FIX;
+    }
+    else
+    {
+      gnssInfo->fixMode = 0;
+      return GNSS_NOT_FIX;
+    }
+  else if (enableDebug)
+    debugStream->println(F("SIM808Driver : getGnssInfo() - Unable to get GNSS Info, GNSS Power is off"));
+  return GNSS_POWER_OFF;
 }
 
 /*****************************************************************************************
  * BASE CONTROLL & CHECK FUNCTIONS
  *****************************************************************************************/
+
 /**
  * Force a reset of the module
  */
@@ -1042,6 +1119,7 @@ uint8_t SIM808Driver::getSignal()
 /*****************************************************************************************
  * HELPERS
  *****************************************************************************************/
+
 /**
  * Find string "findStr" in another string "str"
  * Returns true if found, false elsewhere
@@ -1107,6 +1185,7 @@ void SIM808Driver::initRecvBuffer()
 /*****************************************************************************************
  * LOW LEVEL FUNCTIONS TO COMMUNICATE WITH THE SIM808 MODULE
  *****************************************************************************************/
+
 /**
  * Send AT command to the module
  */
