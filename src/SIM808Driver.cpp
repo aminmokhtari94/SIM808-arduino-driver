@@ -688,7 +688,7 @@ SIM808Driver::GnssStatus SIM808Driver::getGnssInfo(SIM808Driver::GnssInfo *gnssI
   // get Info
   sendCommand_P(AT_CMD_CGNSINF);
 
-  if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_CGNSINF))
+  if (!readResponseCheckAnswer_P(DEFAULT_TIMEOUT, AT_RSP_CGNSINF, 4U))
   {
     if (enableDebug)
       debugStream->println(F("SIM808Driver : getGnssInfo() - Unable to get GNSS Info"));
@@ -724,28 +724,32 @@ SIM808Driver::GnssStatus SIM808Driver::parseGnssData(SIM808Driver::GnssInfo *gns
     if (fix == '1')
     {
       char *tok;
-      uint16_t i = 0;
+      uint8_t i = 0;
       float info[15];
 
-      // Skip first of buffer
-      internalBuffer = &internalBuffer[idx + 14];
+      int16_t idxEnd = strIndex(internalBuffer, "\r\n\r\nOK");
+
+      // Store it on the buffer
+      char *buffer = (char *)malloc(internalBufferSize);
+      for (uint16_t i = 0; i < idxEnd - idx - 14; i++)
+      {
+        buffer[i] = internalBuffer[idx + 14 + i];
+      }
 
       // Split parameters by ',' and save in info[]
-      while ((tok = strtok_r(internalBuffer, ",", &internalBuffer)) != NULL)
+      while ((tok = strtok_r(buffer, ",", &buffer)) != NULL)
       {
+        debugStream->println(tok);
         switch (i)
         {
         case 0:
-          memset(gnssInfo->utc, 0, sizeof(gnssInfo->utc));
-          sprintf(gnssInfo->utc, "%s", tok);
+          strcpy_P(gnssInfo->utc, tok);
           break;
         case 1:
-          memset(gnssInfo->latitude, 0, sizeof(gnssInfo->utc));
-          sprintf(gnssInfo->latitude, "%s", tok);
+          strcpy_P(gnssInfo->latitude, tok);
           break;
         case 2:
-          memset(gnssInfo->longitude, 0, sizeof(gnssInfo->utc));
-          sprintf(gnssInfo->longitude, "%s", tok);
+          strcpy_P(gnssInfo->longitude, tok);
           break;
         case 6:
           gnssInfo->fixMode = atoi(tok);
@@ -1166,7 +1170,7 @@ void SIM808Driver::initInternalBuffer()
 {
   for (uint16_t i = 0; i < internalBufferSize; i++)
   {
-    internalBuffer[i] = '\0';
+    internalBuffer[i] = 0;
   }
 }
 
