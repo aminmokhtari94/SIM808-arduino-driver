@@ -739,11 +739,10 @@ SIM808Driver::GnssStatus SIM808Driver::parseGnssData(SIM808Driver::GnssInfo *gns
       // Split parameters by ',' and save in info[]
       while ((tok = strtok_r(buffer, ",", &buffer)) != NULL)
       {
-        debugStream->println(tok);
         switch (i)
         {
         case 0:
-          strcpy_P(gnssInfo->utc, tok);
+          strcpy_P(gnssInfo->utc, tok); // todo: fix join next tok
           break;
         case 1:
           strcpy_P(gnssInfo->latitude, tok);
@@ -754,10 +753,12 @@ SIM808Driver::GnssStatus SIM808Driver::parseGnssData(SIM808Driver::GnssInfo *gns
         case 6:
           gnssInfo->fixMode = atoi(tok);
           break;
-        case 13:
-          gnssInfo->cN0Max = atoi(tok);
+        case 10:
+          gnssInfo->gpsSatInView = atoi(tok);
           break;
-
+        case 11:
+          gnssInfo->gnssSatUsed = atoi(tok);
+          break;
         default:
           info[i] = atof(tok);
           break;
@@ -772,9 +773,6 @@ SIM808Driver::GnssStatus SIM808Driver::parseGnssData(SIM808Driver::GnssInfo *gns
       gnssInfo->HDOP = info[7];
       gnssInfo->PDOP = info[8];
       gnssInfo->VDOP = info[9];
-      gnssInfo->gpsSatInView = info[10];
-      gnssInfo->gnssSatUsed = info[11];
-      gnssInfo->glonassSatInView = info[12];
 
       return GNSS_FIX;
     }

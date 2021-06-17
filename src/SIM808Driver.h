@@ -85,17 +85,15 @@ public:
     char utc[18];
     char latitude[10];
     char longitude[11];
-    double altitude;
-    double speed;
-    double heading;
+    float altitude;
+    float speed;
+    float heading;
     uint8_t fixMode;
-    double HDOP;
-    double PDOP;
-    double VDOP;
-    double gpsSatInView;
-    double gnssSatUsed;
-    double glonassSatInView;
-    uint8_t cN0Max;
+    float HDOP;
+    float PDOP;
+    float VDOP;
+    uint8_t gpsSatInView;
+    uint8_t gnssSatUsed;
   };
 
   // Force a reset of the module

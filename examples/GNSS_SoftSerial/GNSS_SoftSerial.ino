@@ -35,6 +35,7 @@
 #define SIM808_RST_PIN -1
 
 SIM808Driver *sim808;
+SIM808Driver::GnssInfo gnssInfo;
 
 void setup()
 {
@@ -58,40 +59,34 @@ void setup()
   setupModule();
 }
 
-SIM808Driver::GnssInfo gnssInfo;
 void loop()
 {
-  Serial.println("start of loop");
   if (sim808->getGnssInfo(&gnssInfo) == SIM808Driver::GNSS_FIX)
   {
     Serial.print("utc: ");
     Serial.println(gnssInfo.utc);
-    Serial.print("utc: ");
+    Serial.print("latitude: ");
     Serial.println(gnssInfo.latitude);
-    Serial.print("utc: ");
+    Serial.print("longitude: ");
     Serial.println(gnssInfo.longitude);
-    Serial.print("utc: ");
+    Serial.print("altitude: ");
     Serial.println(gnssInfo.altitude);
-    Serial.print("utc: ");
+    Serial.print("speed: ");
     Serial.println(gnssInfo.speed);
-    Serial.print("utc: ");
+    Serial.print("heading: ");
     Serial.println(gnssInfo.heading);
-    Serial.print("utc: ");
+    Serial.print("fixMode: ");
     Serial.println(gnssInfo.fixMode);
-    Serial.print("utc: ");
+    Serial.print("HDOP: ");
     Serial.println(gnssInfo.HDOP);
-    Serial.print("utc: ");
+    Serial.print("PDOP: ");
     Serial.println(gnssInfo.PDOP);
-    Serial.print("utc: ");
+    Serial.print("VDOP: ");
     Serial.println(gnssInfo.VDOP);
-    Serial.print("utc: ");
+    Serial.print("gpsSatInView: ");
     Serial.println(gnssInfo.gpsSatInView);
-    Serial.print("utc: ");
+    Serial.print("gnssSatUsed: ");
     Serial.println(gnssInfo.gnssSatUsed);
-    Serial.print("utc: ");
-    Serial.println(gnssInfo.glonassSatInView);
-    Serial.print("utc: ");
-    Serial.println(gnssInfo.cN0Max);
   }
   delay(5000);
 }
